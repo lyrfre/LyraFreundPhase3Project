@@ -146,13 +146,14 @@ def choose_a_trip():
                     ])
         ]
         chosen_update_options = inquirer.prompt(update_options)
+        stop = stop_options.result()
+        print(stop)
+        stop_to_edit = session.query(Attraction).filter_by(Attraction.attraction_name == stop).first()
         if chosen_update_options["attribute"] == "attraction_name":
-            print(stop_options.result())
-            # new_attraction = input("Enter a new name: ")
-            # print(stop_to_edit)
-            # stop_to_edit.attraction_name = new_attraction
-            # session.add(stop_to_edit.attraction_name)
-            # session.commit()
+            new_attraction = input("Enter a new name: ")
+            stop_to_edit.attraction_name = new_attraction
+            session.add(stop_to_edit.attraction_name)
+            session.commit()
 
     elif action["attractions"] == "Delete this itinerary":
         if chosen_trip is not None:
