@@ -36,13 +36,25 @@ class Attraction(Base):
     trip = relationship("Trip", back_populates="attractions")
 
     def __repr__(self):
-        return f'{self.attraction_name} in {self.city}, {self.country}'
+        return f'        {self.attraction_name} in {self.city}, {self.country}'
 
 Base.metadata.create_all(engine)
 
 global tripID
 
+global name
+
+def enter_name():
+        global name
+        name = input('Thanks for choosing us for your travel needs! What is your name: ')
+        print(f"Congratulations {name} on your PTO approval! Please choose from the following options!")
+
+
 def create_trip():
+    global name
+
+    enter_name()
+            
     global tripID
     answers = inquirer.prompt([inquirer.Text(name='title', message="What would you like to call your trip?")])
 
@@ -106,15 +118,20 @@ def choose_a_trip():
             choices=[trip.title for trip in session.query(Trip).all()])
     ]
     answers = inquirer.prompt(questions)
-    print(answers['trips'])
+    # print("Selected Trip:")
+    # print(answers['trips'])
     chosen_trip = session.query(Trip).filter(Trip.title == answers["trips"]).first()
-    print(chosen_trip.attractions)
+    # print("Stops on this trip:")
+    # print(chosen_trip.attractions)
+    print(" ")
     options = [
         inquirer.List(
         "attractions", 
         message = "What would you like to do with this trip?", 
         choices =[
-            "Update", 
+            "View Stops",
+            "Update Stops", 
+            "Update Trip name",
             "Delete this itinerary",
             "Copy this itinerary!", 
             "Choose A Different Existing Trip",
@@ -124,16 +141,16 @@ def choose_a_trip():
             ])
     ]
     action = inquirer.prompt(options)
-    if action["attractions"] == "Update":
+    if action["attractions"] == "Update Stops":
         options = [
         inquirer.List(
             "stops", 
-            message="Which stop would you like to access?", 
+            message="Which stop would you like to update?", 
             choices=chosen_trip.attractions)
         ]
         stop_options = inquirer.prompt(options)
-        print(stop_options['stops'])
-        # stop_to_edit = session.query(Attraction).filter_by(chosen_trip.id).first()
+        print(stop_options['stops'].id)
+        stop_to_edit = session.query(Attraction).filter_by(id = stop_options['stops'].id).first()
         # print(stop_to_edit)
         update_options = [
             inquirer.List(
@@ -142,19 +159,44 @@ def choose_a_trip():
                 choices=[
                     "attraction_name",
                     "city",
-                    "country"
+                    "country",
+                    "Delete this stop"
                     ])
         ]
         chosen_update_options = inquirer.prompt(update_options)
-        stop = stop_options.result()
-        print(stop)
-        stop_to_edit = session.query(Attraction).filter_by(Attraction.attraction_name == stop).first()
-        if chosen_update_options["attribute"] == "attraction_name":
-            new_attraction = input("Enter a new name: ")
-            stop_to_edit.attraction_name = new_attraction
-            session.add(stop_to_edit.attraction_name)
-            session.commit()
-
+        if stop_to_edit is not None:
+            if chosen_update_options["attribute"] == "attraction_name":
+                new_attraction_name = input("Enter a new name: ")
+                stop_to_edit.attraction_name = new_attraction_name
+                session.commit()
+                print("Updated")
+            elif chosen_update_options["attribute"] == "city":
+                new_city = input("Enter a new city: ")
+                stop_to_edit.city = new_city
+                session.commit()
+                print("Updated")
+            elif chosen_update_options["attribute"] == "country":
+                new_country = input("Enter a new country: ")
+                stop_to_edit.country = new_country
+                session.commit()
+                print("Updated")
+            elif chosen_update_options["attribute"] == "Delete this stop":
+                session.delete(stop_to_edit)
+                session.commit()
+                print("Stop deleted!")
+    elif action["attractions"] == "Update Trip name":
+        new_trip_name = input("Enter a new Trip name: ")
+        print(chosen_trip.title)
+        chosen_trip.title = new_trip_name
+        session.commit()
+    elif action["attractions"] == "View Stops":
+        print(f"for {chosen_trip.title}, here are the chosen stops:")
+        print(" ")
+        print(chosen_trip.attractions)
+        print(" ")
+        print(" ")
+        choose_a_trip()
+        # main()
     elif action["attractions"] == "Delete this itinerary":
         if chosen_trip is not None:
             try:
@@ -193,16 +235,11 @@ def list_countries():
         print(country)
 
 
-global name
+
 
 def main():
     while True:
-        global name
-        name = input('Thanks for choosing us for your travel needs! What is your name: ')
-        # menu()
-        print(f"Congratulations {name} on your PTO approval! Please choose from the following options!")
-        # inquire
-        
+        print("Welcome to the trip planner! Please choose an option:")
         print("1. Create a trip")
         print("2. View Existing trips")
         print("0. Exit the program")
