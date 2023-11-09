@@ -5,5 +5,5 @@ def helper_1():
 
 
 def exit_program():
-    print("Goodbye!")
+    print("Goodbye, be safe out there!")
     exit()

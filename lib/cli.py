@@ -3,7 +3,7 @@ import inquirer
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, delete
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
-
+from seed import PreMadeItineraries
 DATABASE_URL ='sqlite:///sisterhoodofthetravelingplans.db'
 engine= create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
@@ -36,8 +36,10 @@ class Attraction(Base):
     trip = relationship("Trip", back_populates="attractions")
 
     def __repr__(self):
-        return f'        {self.attraction_name} in {self.city}, {self.country}'
+        return f'  {self.attraction_name} in {self.city}, {self.country}'
 
+# Attraction.__table__.drop(engine)
+# Trip.__table__.drop(engine)
 Base.metadata.create_all(engine)
 
 global tripID
@@ -47,7 +49,7 @@ global name
 def enter_name():
         global name
         name = input('Thanks for choosing us for your travel needs! What is your name: ')
-        print(f"Congratulations {name} on your PTO approval! Please choose from the following options!")
+        print(f"Congratulations {name} on your PTO approval!")
 
 
 def create_trip():
@@ -67,6 +69,7 @@ def create_trip():
         return trip
     print('That trip already exists! Please try again! :)')
     create_trip()
+    
     # tripID = trip.id
     # return trip
 
@@ -129,11 +132,10 @@ def choose_a_trip():
         "attractions", 
         message = "What would you like to do with this trip?", 
         choices =[
-            "View Stops",
-            "Update Stops", 
+            # "View Stops",
+            "View or Update Stops", 
             "Update Trip name",
             "Delete this itinerary",
-            "Copy this itinerary!", 
             "Choose A Different Existing Trip",
             "Create Another Itinerary!",
             "Main Menu",
@@ -141,11 +143,11 @@ def choose_a_trip():
             ])
     ]
     action = inquirer.prompt(options)
-    if action["attractions"] == "Update Stops":
+    if action["attractions"] == "View or Update Stops":
         options = [
         inquirer.List(
             "stops", 
-            message="Which stop would you like to update?", 
+            message="Would you like to update, view more, or exit?", 
             choices=chosen_trip.attractions)
         ]
         stop_options = inquirer.prompt(options)
@@ -155,12 +157,14 @@ def choose_a_trip():
         update_options = [
             inquirer.List(
                 "attribute", 
-                message="Which would you like to update?", 
+                message="Would you like to update, view more, or exit?", 
                 choices=[
+                    "Back to trips",
                     "attraction_name",
                     "city",
                     "country",
-                    "Delete this stop"
+                    "Delete this stop",
+                    "Main menu"
                     ])
         ]
         chosen_update_options = inquirer.prompt(update_options)
@@ -184,18 +188,22 @@ def choose_a_trip():
                 session.delete(stop_to_edit)
                 session.commit()
                 print("Stop deleted!")
+            elif chosen_update_options["attribute"] == "Back to trips":
+                choose_a_trip()
+            elif chosen_update_options["attribute"] == "Main menu":
+                main()
     elif action["attractions"] == "Update Trip name":
         new_trip_name = input("Enter a new Trip name: ")
         print(chosen_trip.title)
         chosen_trip.title = new_trip_name
         session.commit()
-    elif action["attractions"] == "View Stops":
-        print(f"for {chosen_trip.title}, here are the chosen stops:")
-        print(" ")
-        print(chosen_trip.attractions)
-        print(" ")
-        print(" ")
-        choose_a_trip()
+    # elif action["attractions"] == "View Stops":
+    #     print(f"for {chosen_trip.title}, here are the chosen stops:")
+    #     print(" ")
+    #     print(chosen_trip.attractions)
+    #     print(" ")
+    #     print(" ")
+    #     choose_a_trip()
         # main()
     elif action["attractions"] == "Delete this itinerary":
         if chosen_trip is not None:
@@ -208,8 +216,6 @@ def choose_a_trip():
                 session.rollback()
             else:
                 print(" ")
-    elif action["attractions"] == "Copy this itinerary!":
-        print("copy function here")
     elif action["attractions"] == "Choose A Different Existing Trip":
         choose_a_trip()
     elif action["attractions"] == "Create Another Itinerary!":
@@ -239,9 +245,10 @@ def list_countries():
 
 def main():
     while True:
-        print("Welcome to the trip planner! Please choose an option:")
+        print("Welcome to the Sisterhood of the Travelling Plans!\nPlease choose an option:\n")
         print("1. Create a trip")
         print("2. View Existing trips")
+        print("3. View Past Trips!")
         print("0. Exit the program")
         choice = input("> ")
         if choice == "0":
@@ -251,8 +258,26 @@ def main():
             post_trip_menu()
         elif choice == "2":
             choose_a_trip()
+        elif choice == "3":
+            print(get_premade_itineraries())
+            print(" ")
+            print("These were so fun!! Now for your next adventure!")
+            print(" ")
+            main()
         else:
             print("Invalid choice")
+
+def get_premade_itineraries():
+   premade_itineraries = session.query(PreMadeItineraries).all()
+   return premade_itineraries
+
+# import cli
+
+# def show_premade():
+#    itineraries = cli.get_premade_itineraries()
+#    for itinerary in itineraries:
+#        print(itinerary)
+
 
 
 def post_trip_menu():
@@ -268,7 +293,7 @@ def post_trip_menu():
     elif choice == "1":
         create_your_own_itinerary()
     elif choice == "2":
-        print(" pre-existing itineraries coming soon!")
+        print(get_premade_itineraries())
     elif choice == "3":
         choose_a_trip()
     else:
